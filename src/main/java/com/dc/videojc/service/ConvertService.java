@@ -85,7 +85,7 @@ public class ConvertService {
         videoConvertorTaskMap.put(convertContext.getTaskId(), task);
         task.setOnAbort(() -> {
             videoConvertorTaskMap.remove(task.getTaskContext().getId());
-            log.info("转换任务[{}]结束![{}]", task.getTaskContext(), task);
+            log.info("转换任务[{}](可能是异常)结束![{}]", task.getTaskContext(), task);
         });
         log.info("转换任务[{}]启动![{}]", task.getTaskContext(), task);
     }
