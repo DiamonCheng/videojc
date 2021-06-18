@@ -1,9 +1,7 @@
 package com.dc.videojc.service.javacv;
 
-import com.dc.videojc.model.ClientInfo;
+import com.dc.videojc.model.TaskContext;
 import com.dc.videojc.service.VideoConvertorTask;
-
-import java.util.List;
 
 /***
  * descriptions...
@@ -11,6 +9,8 @@ import java.util.List;
  * @date 2021/6/18
  */
 public class JavacvVideoConvertorTask implements VideoConvertorTask {
+    
+    
     @Override
     public void start() {
     
@@ -22,12 +22,13 @@ public class JavacvVideoConvertorTask implements VideoConvertorTask {
     }
     
     @Override
-    public String getId() {
+    public TaskContext getTaskContext() {
         return null;
     }
     
     @Override
-    public List<ClientInfo> clientList() {
-        return null;
+    public void setOnAbort(Runnable callable) {
+    
     }
+    
 }

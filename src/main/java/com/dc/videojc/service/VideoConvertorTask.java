@@ -1,8 +1,6 @@
 package com.dc.videojc.service;
 
-import com.dc.videojc.model.ClientInfo;
-
-import java.util.List;
+import com.dc.videojc.model.TaskContext;
 
 /***
  * descriptions...
@@ -14,7 +12,7 @@ public interface VideoConvertorTask {
     
     void shutdown();
     
-    String getId();
+    TaskContext getTaskContext();
     
-    List<ClientInfo> clientList();
+    void setOnAbort(Runnable callable);
 }

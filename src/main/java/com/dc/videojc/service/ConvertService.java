@@ -6,7 +6,9 @@ import com.dc.videojc.config.WebContextBinder;
 import com.dc.videojc.model.ClientInfo;
 import com.dc.videojc.model.ConvertContext;
 import com.dc.videojc.model.VideoInfo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
  * @date 2021/6/18
  */
 @Service
+@Slf4j
 public class ConvertService {
     
     @Value("${vediojc.protocols.support}")
@@ -37,10 +40,13 @@ public class ConvertService {
     private Set<String> supportTargetFormats;
     @Value("${vediojc.target-format.default:flv}")
     private String defaultTargetFormat;
+    @Value("${vediojc.task.close.wait:60000}")
+    private Long taskCloseWait;
     
     private List<VideoConvertor> videoConvertors;
     
-    private Map<String, VideoConvertorTask> videoConvertorTaskMap = Collections.synchronizedMap(new LinkedHashMap<>());
+    private final Map<String, VideoConvertorTask> videoConvertorTaskMap = Collections.synchronizedMap(new LinkedHashMap<>());
+    
     
     @PostConstruct
     public void init() {
@@ -51,8 +57,22 @@ public class ConvertService {
                                   .collect(Collectors.toList());
     }
     
-    private void monitorTasks() {
-    
+    @Scheduled(fixedRate = 1000)
+    public void monitorTasks() {
+        long currentTimestamp = System.currentTimeMillis();
+        videoConvertorTaskMap.entrySet().removeIf(e -> {
+            VideoConvertorTask task = e.getValue();
+            if (task.getTaskContext().getLastNoClientTime() == null) {
+                return false;
+            }
+            if (currentTimestamp - task.getTaskContext().getLastNoClientTime() > taskCloseWait) {
+                log.info("转换任务[{}]因一段时间没有客户端连接而结束[{}]", task.getTaskContext(), task);
+                task.shutdown();
+                return true;
+            } else {
+                return false;
+            }
+        });
     }
     
     public void doConvert(DataSender sender, VideoInfo videoInfo) {
@@ -63,6 +83,11 @@ public class ConvertService {
                                                 .orElseThrow(() -> new IllegalStateException("当前转换不支持 " + videoInfo));
         VideoConvertorTask task = videoConvertor.doConvert(convertContext);
         videoConvertorTaskMap.put(convertContext.getTaskId(), task);
+        task.setOnAbort(() -> {
+            videoConvertorTaskMap.remove(task.getTaskContext().getId());
+            log.info("转换任务[{}]结束![{}]", task.getTaskContext(), task);
+        });
+        log.info("转换任务[{}]启动![{}]", task.getTaskContext(), task);
     }
     
     private ConvertContext buildContext(DataSender dataSender, VideoInfo videoInfo) {
@@ -78,10 +103,10 @@ public class ConvertService {
         Assert.isTrue(supportTargetFormats.contains(videoInfo.getTargetFormat()), "不支持的目标格式: " + videoInfo.getTargetFormat() + ", 支持 " + supportTargetFormats);
         ConvertContext convertContext = new ConvertContext();
         convertContext.setTaskId(MD5.create().digestHex(videoInfo.toString(), StandardCharsets.UTF_8));
-        convertContext.setDataSender(dataSender);
         convertContext.setVideoInfo(videoInfo);
         convertContext.setSourceProtocol(protocol);
         ClientInfo clientInfo = new ClientInfo();
+        clientInfo.setDataSender(dataSender);
         clientInfo.setConnectTime(new Date());
         clientInfo.setClientIp(getIpAddress());
         return convertContext;

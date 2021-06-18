@@ -1,5 +1,6 @@
 package com.dc.videojc.model;
 
+import com.dc.videojc.service.DataSender;
 import lombok.Data;
 
 import java.util.Date;
@@ -13,4 +14,5 @@ import java.util.Date;
 public class ClientInfo {
     private String clientIp;
     private Date connectTime;
+    private DataSender dataSender;
 }
