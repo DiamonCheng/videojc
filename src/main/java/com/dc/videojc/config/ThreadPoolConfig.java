@@ -1,5 +1,6 @@
 package com.dc.videojc.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,7 @@ public class ThreadPoolConfig {
     private Integer poolMaxSize;
     
     @Bean
+    @Qualifier("defaultTaskPool")
     public ThreadPoolTaskExecutor threadPoolTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(poolCoreSize);
