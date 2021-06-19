@@ -47,7 +47,7 @@ public class FfmpegVideoConvertor implements VideoConvertor {
     }
     
     @Override
-    public VideoConvertorTask doConvert(ConvertContext convertContext) {
+    public VideoConvertorTask prepareConvert(ConvertContext convertContext) {
         return null;
     }
 }

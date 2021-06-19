@@ -7,8 +7,10 @@ import com.dc.videojc.model.ClientInfo;
 import com.dc.videojc.model.ConvertContext;
 import com.dc.videojc.model.VideoInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
@@ -47,6 +49,8 @@ public class ConvertService {
     
     private final Map<String, VideoConvertorTask> videoConvertorTaskMap = Collections.synchronizedMap(new LinkedHashMap<>());
     
+    @Autowired
+    private ThreadPoolTaskExecutor threadPoolTaskExecutor;
     
     @PostConstruct
     public void init() {
@@ -62,6 +66,9 @@ public class ConvertService {
         long currentTimestamp = System.currentTimeMillis();
         videoConvertorTaskMap.entrySet().removeIf(e -> {
             VideoConvertorTask task = e.getValue();
+            if (task.getTaskContext().isNotAutoClose()) {
+                return false;
+            }
             if (task.getTaskContext().getLastNoClientTime() == null) {
                 return false;
             }
@@ -77,17 +84,33 @@ public class ConvertService {
     
     public void doConvert(DataSender sender, VideoInfo videoInfo) {
         ConvertContext convertContext = buildContext(sender, videoInfo);
-        VideoConvertor videoConvertor = videoConvertors.stream()
-                                                .filter(e -> e.isSupport(convertContext))
-                                                .findFirst()
-                                                .orElseThrow(() -> new IllegalStateException("当前转换不支持 " + videoInfo));
-        VideoConvertorTask task = videoConvertor.doConvert(convertContext);
-        videoConvertorTaskMap.put(convertContext.getTaskId(), task);
-        task.setOnAbort(() -> {
-            videoConvertorTaskMap.remove(task.getTaskContext().getId());
-            log.info("转换任务[{}](可能是异常)结束![{}]", task.getTaskContext(), task);
-        });
-        log.info("转换任务[{}]启动![{}]", task.getTaskContext(), task);
+        ClientInfo clientInfo = convertContext.getClientInfo();
+        VideoConvertorTask convertTask;
+        boolean newTask;
+        convertTask = videoConvertorTaskMap.get(convertContext.getTaskId());
+        newTask = false;
+        if (convertTask == null || !convertTask.isRunning()) {
+            VideoConvertor videoConvertor = videoConvertors.stream()
+                                                    .filter(e -> e.isSupport(convertContext))
+                                                    .findFirst()
+                                                    .orElseThrow(() -> new IllegalStateException("当前转换不支持 " + videoInfo));
+            convertTask = videoConvertor.prepareConvert(convertContext);
+            final VideoConvertorTask finalConvertTask = convertTask;
+            convertTask.setOnAbort(() -> {
+                //防止移除掉重新生成的新任务
+                videoConvertorTaskMap.remove(finalConvertTask.getTaskContext().getId(), finalConvertTask);
+                log.info("转换任务[{}](可能是异常)结束![{}]", finalConvertTask.getTaskContext(), finalConvertTask);
+            });
+            videoConvertorTaskMap.put(convertContext.getTaskId(), convertTask);
+            log.info("转换任务[{}]启动![{}]", convertTask.getTaskContext(), convertTask);
+            newTask = true;
+        }
+        //保证初始化之后 addClient
+        if (newTask) {
+            convertTask.init();
+            threadPoolTaskExecutor.execute(convertTask);
+        }
+        convertTask.addClient(clientInfo);
     }
     
     private ConvertContext buildContext(DataSender dataSender, VideoInfo videoInfo) {

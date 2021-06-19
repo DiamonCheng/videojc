@@ -1,5 +1,7 @@
 package com.dc.videojc.service.javacv;
 
+import com.dc.videojc.model.ClientInfo;
+import com.dc.videojc.model.TaskContext;
 import com.dc.videojc.service.AbstractVideoConvertorTask;
 import com.dc.videojc.service.VideoConvertorTask;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.bytedeco.javacv.FrameRecorder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 
 /***
  * descriptions...
@@ -39,16 +42,27 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
      */
     private FFmpegFrameRecorder recorder;
     
-    private volatile boolean isRunning = false;
+    /**
+     * 标记1 可以循环处理
+     * 标记2 可以接收客户端
+     */
+    private volatile boolean isRunning = true;
     /**
      * true:转复用,false:转码
      * 默认转码
      */
     boolean notTransformFlag = false;
-    //时间戳计算
+    /**
+     * 时间戳计算
+     */
     long startTime = 0;
     long videoTs;
     
+    public JavacvVideoConvertorTask(TaskContext taskContext) {
+        super(taskContext);
+    }
+    
+    @Override
     public void init() {
         initGrabber();
         supportFlvFormatCodec();
@@ -65,16 +79,27 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
     }
     
     @Override
+    public boolean isRunning() {
+        return isRunning;
+    }
+    
+    @Override
     public void run() {
-        isRunning = true;
         try {
             while (isRunning) {
                 processFramesLoop();
             }
         } catch (Exception e) {
+            /*
+                任务变为不可用 防止这时还在添加客户端
+             */
+            isRunning = false;
+            if (onAbort != null) {
+                onAbort.run();
+            }
             log.error("转换任务[" + this.getTaskContext() + "}]异常!![" + this + "]", e);
         }
-        
+        closeAllClient();
         try {
             recorder.close();
         } catch (FrameRecorder.Exception e) {
@@ -90,26 +115,22 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         } catch (IOException e) {
             log.warn("转换任务[" + this.getTaskContext() + "}]关闭媒体流--失败[" + this + "]", e);
         }
-        isRunning = false;
         log.info("转换任务[{}]关闭媒体流[{}]", this.getTaskContext(), this);
-        if (onAbort != null) {
-            onAbort.run();
-        }
     }
     
     protected void processFramesLoop() throws FrameGrabber.Exception, FrameRecorder.Exception {
         long currentTimestamp = System.currentTimeMillis();
-        boolean isNull;
+        boolean isNotNull;
         if (notTransformFlag) {
             //转复用
-            isNull = processTransfer(currentTimestamp);
+            isNotNull = processTransfer(currentTimestamp);
         } else {
             //转码
-            isNull = processTransform(currentTimestamp);
+            isNotNull = processTransform(currentTimestamp);
         }
-        if (isNull) {
-            log.warn("转换任务[{}]没有有效帧-结束任务[{}]", this.getTaskContext(), this);
+        if (!isNotNull) {
             isRunning = false;
+            log.warn("转换任务[{}]没有有效帧-结束任务[{}]", this.getTaskContext(), this);
         } else if (bos.size() > 0) {
             byte[] b = bos.toByteArray();
             bos.reset();
@@ -155,7 +176,15 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
     }
     
     private void sendFrameData(byte[] data) {
-    
+        for (Iterator<ClientInfo> iterator = taskContext.getClientList().iterator(); iterator.hasNext(); ) {
+            ClientInfo client = iterator.next();
+            try {
+                client.getDataSender().send(data);
+            } catch (Exception e) {
+                iterator.remove();
+                log.warn("转换任务[{}]发送客户端数据失败,应该是客户端已经关闭[{}],clientInfo:[{}]", this.getTaskContext(), this, client);
+            }
+        }
     }
     
     @Override

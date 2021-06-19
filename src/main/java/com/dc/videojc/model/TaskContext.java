@@ -1,7 +1,11 @@
 package com.dc.videojc.model;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /***
@@ -13,7 +17,9 @@ import java.util.List;
 public class TaskContext {
     private String id;
     private VideoInfo videoInfo;
-    private List<ClientInfo> clientList;
+    private boolean notAutoClose;
+    @Setter(AccessLevel.PRIVATE)
+    private List<ClientInfo> clientList = Collections.synchronizedList(new ArrayList<>());
     private Long lastNoClientTime;
     private String sourceProtocol;
     
@@ -25,6 +31,7 @@ public class TaskContext {
         return "TaskContext{" +
                        "id='" + id + '\'' +
                        ", videoInfo=" + videoInfo +
+                       ", notAutoClose=" + notAutoClose +
                        '}';
     }
 }

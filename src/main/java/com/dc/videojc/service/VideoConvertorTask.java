@@ -1,5 +1,6 @@
 package com.dc.videojc.service;
 
+import com.dc.videojc.model.ClientInfo;
 import com.dc.videojc.model.TaskContext;
 
 /***
@@ -8,6 +9,9 @@ import com.dc.videojc.model.TaskContext;
  * @date 2021/6/18
  */
 public interface VideoConvertorTask extends Runnable {
+    Object VIDEO_CONVERTOR_TASK_MAP_LOCK = new Object();
+    
+    @Override
     void run();
     
     void shutdown();
@@ -15,4 +19,10 @@ public interface VideoConvertorTask extends Runnable {
     TaskContext getTaskContext();
     
     void setOnAbort(Runnable callable);
+    
+    void addClient(ClientInfo clientInfo);
+    
+    void init();
+    
+    boolean isRunning();
 }

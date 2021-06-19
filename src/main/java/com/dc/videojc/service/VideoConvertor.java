@@ -29,5 +29,5 @@ public interface VideoConvertor {
      * @param convertContext 上下文
      * @return 视频流任务(用于管理)
      */
-    VideoConvertorTask doConvert(ConvertContext convertContext);
+    VideoConvertorTask prepareConvert(ConvertContext convertContext);
 }

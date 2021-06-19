@@ -15,4 +15,5 @@ public class ClientInfo {
     private String clientIp;
     private Date connectTime;
     private DataSender dataSender;
+    private volatile boolean headerSent;
 }

@@ -13,4 +13,5 @@ public class ConvertContext {
     private VideoInfo videoInfo;
     private ClientInfo clientInfo;
     private String sourceProtocol;
+    private Boolean autoClose;
 }
