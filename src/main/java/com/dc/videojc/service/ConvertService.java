@@ -73,7 +73,7 @@ public class ConvertService {
                 return false;
             }
             if (currentTimestamp - task.getTaskContext().getLastNoClientTime() > taskCloseWait) {
-                log.info("转换任务[{}]因一段时间没有客户端连接而结束[{}]", task.getTaskContext(), task);
+                log.info("转换任务-因一段时间没有客户端连接而结束[{}][{}]", task.getTaskContext(), task);
                 task.shutdown();
                 return true;
             } else {
@@ -99,10 +99,10 @@ public class ConvertService {
             convertTask.setOnAbort(() -> {
                 //防止移除掉重新生成的新任务
                 videoConvertorTaskMap.remove(finalConvertTask.getTaskContext().getId(), finalConvertTask);
-                log.info("转换任务[{}](可能是异常)结束![{}]", finalConvertTask.getTaskContext(), finalConvertTask);
+                log.info("转换任务-(可能是异常)结束![{}][{}]", finalConvertTask.getTaskContext(), finalConvertTask);
             });
             videoConvertorTaskMap.put(convertContext.getTaskId(), convertTask);
-            log.info("转换任务[{}]启动![{}]", convertTask.getTaskContext(), convertTask);
+            log.info("转换任务-启动![{}]启动![{}]", convertTask.getTaskContext(), convertTask);
             newTask = true;
         }
         //保证初始化之后 addClient
@@ -132,6 +132,7 @@ public class ConvertService {
         clientInfo.setDataSender(dataSender);
         clientInfo.setConnectTime(new Date());
         clientInfo.setClientIp(getIpAddress());
+        convertContext.setClientInfo(clientInfo);
         return convertContext;
     }
     

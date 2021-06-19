@@ -42,7 +42,7 @@ public abstract class AbstractVideoConvertorTask implements VideoConvertorTask {
     
     @Override
     public void addClient(ClientInfo clientInfo) {
-    
+        taskContext.getClientList().add(clientInfo);
     }
     
 }

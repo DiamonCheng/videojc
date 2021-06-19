@@ -22,7 +22,7 @@ public class StreamController {
     
     @GetMapping("live")
     public Object live(VideoInfo videoInfo) {
-        ResponseBodyEmitter responseBodyEmitter = new ResponseBodyEmitter();
+        ResponseBodyEmitter responseBodyEmitter = new ResponseBodyEmitter(-1L);
         convertService.doConvert(new EmitterDataSender(responseBodyEmitter), videoInfo);
         return responseBodyEmitter;
     }

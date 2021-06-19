@@ -5,7 +5,7 @@
 https://gitee.com/52jian/EasyMedia.git
 
 ## Usage
-http://localhost:8080/live?source=?
+http://localhost:8080/live?source=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
 ## TODO
 * test
 * addFfmpegSupport

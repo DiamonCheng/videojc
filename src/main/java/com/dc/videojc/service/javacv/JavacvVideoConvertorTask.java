@@ -97,25 +97,25 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
             if (onAbort != null) {
                 onAbort.run();
             }
-            log.error("转换任务[" + this.getTaskContext() + "}]异常!![" + this + "]", e);
+            log.error("转换任务-异常!! [" + this.getTaskContext() + "}][" + this + "]", e);
         }
         closeAllClient();
         try {
             recorder.close();
         } catch (FrameRecorder.Exception e) {
-            log.warn("转换任务[" + this.getTaskContext() + "}]关闭媒体流--失败[" + this + "]", e);
+            log.warn("转换任务-关闭媒体流--失败[" + this.getTaskContext() + "}][" + this + "]", e);
         }
         try {
             grabber.close();
         } catch (FrameGrabber.Exception e) {
-            log.warn("转换任务[" + this.getTaskContext() + "}]关闭媒体流--失败[" + this + "]", e);
+            log.warn("转换任务-关闭媒体流--失败[" + this.getTaskContext() + "}][" + this + "]", e);
         }
         try {
             bos.close();
         } catch (IOException e) {
-            log.warn("转换任务[" + this.getTaskContext() + "}]关闭媒体流--失败[" + this + "]", e);
+            log.warn("转换任务-关闭媒体流--失败[" + this.getTaskContext() + "}][" + this + "]", e);
         }
-        log.info("转换任务[{}]关闭媒体流[{}]", this.getTaskContext(), this);
+        log.info("转换任务-关闭媒体流[{}][{}]", this.getTaskContext(), this);
     }
     
     protected void processFramesLoop() throws FrameGrabber.Exception, FrameRecorder.Exception {
@@ -130,7 +130,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         }
         if (!isNotNull) {
             isRunning = false;
-            log.warn("转换任务[{}]没有有效帧-结束任务[{}]", this.getTaskContext(), this);
+            log.warn("转换任务-没有有效帧-结束任务[{}][{}]", this.getTaskContext(), this);
         } else if (bos.size() > 0) {
             byte[] b = bos.toByteArray();
             bos.reset();
@@ -151,6 +151,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
                 recorder.setTimestamp((videoTs));
             }
             recorder.record(frame);
+            log.trace("转换任务-转码帧[{}][{}][{}]", this.getTaskContext(), this, videoTs);
             return true;
         } else {
             return false;
@@ -169,6 +170,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
                 recorder.setTimestamp((videoTs));
             }
             recorder.recordPacket(pkt);
+            log.trace("转换任务-转复用[{}][{}][{}]", this.getTaskContext(), this, videoTs);
             return true;
         } else {
             return false;
@@ -179,12 +181,23 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         for (Iterator<ClientInfo> iterator = taskContext.getClientList().iterator(); iterator.hasNext(); ) {
             ClientInfo client = iterator.next();
             try {
+                if (!client.isHeaderSent()) {
+                    client.getDataSender().send(header);
+                    client.setHeaderSent(true);
+                }
                 client.getDataSender().send(data);
             } catch (Exception e) {
                 iterator.remove();
-                log.warn("转换任务[{}]发送客户端数据失败,应该是客户端已经关闭[{}],clientInfo:[{}]", this.getTaskContext(), this, client);
+                log.warn("转换任务-发送客户端数据失败,应该是客户端已经关闭[{}][{}],clientInfo:[{}]", this.getTaskContext(), this, client);
+                log.warn("", e);
             }
         }
+        if (taskContext.getClientList().isEmpty() && taskContext.getLastNoClientTime() == null) {
+            taskContext.setLastNoClientTime(System.currentTimeMillis());
+        } else if (!taskContext.getClientList().isEmpty()) {
+            taskContext.setLastNoClientTime(null);
+        }
+    
     }
     
     @Override
@@ -240,7 +253,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         
         try {
             grabber.start();
-            log.info("转换任务[{}]启动拉流器成功[{}]", this.getTaskContext(), this);
+            log.info("转换任务-启动拉流器成功[{}][{}]", this.getTaskContext(), this);
         } catch (FrameGrabber.Exception e) {
             throw new IllegalStateException("启动拉流器失败，网络超时或视频源不可用", e);
         }
@@ -293,6 +306,20 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
                 }
                 initRecorder();
             }
+        }
+    }
+    
+    @Override
+    public void addClient(ClientInfo clientInfo) {
+        try {
+            if (!clientInfo.isHeaderSent()) {
+                clientInfo.getDataSender().send(header);
+                clientInfo.setHeaderSent(true);
+            }
+            super.addClient(clientInfo);
+            log.info("转换任务-添加客户端成功[{}][{}][{}]", this.getTaskContext(), this, clientInfo);
+        } catch (Exception e) {
+            throw new IllegalStateException("发送视频流头部信息失败", e);
         }
     }
 }
