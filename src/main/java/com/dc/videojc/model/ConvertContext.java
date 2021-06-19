@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 public class ConvertContext {
     private String taskId;
-    private String sourceProtocol;
     private VideoInfo videoInfo;
     private ClientInfo clientInfo;
+    private String sourceProtocol;
 }

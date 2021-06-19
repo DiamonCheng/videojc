@@ -7,8 +7,8 @@ import com.dc.videojc.model.TaskContext;
  * @author Diamon.Cheng
  * @date 2021/6/18
  */
-public interface VideoConvertorTask {
-    void start();
+public interface VideoConvertorTask extends Runnable {
+    void run();
     
     void shutdown();
     

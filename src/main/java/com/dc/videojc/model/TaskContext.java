@@ -15,5 +15,16 @@ public class TaskContext {
     private VideoInfo videoInfo;
     private List<ClientInfo> clientList;
     private Long lastNoClientTime;
+    private String sourceProtocol;
     
+    /**
+     * toString
+     */
+    @Override
+    public String toString() {
+        return "TaskContext{" +
+                       "id='" + id + '\'' +
+                       ", videoInfo=" + videoInfo +
+                       '}';
+    }
 }
