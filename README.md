@@ -14,6 +14,7 @@ https://gitee.com/52jian/EasyMedia.git
 *[x] test...
 *[x] addFfmpegSupport
 *[x] 添加WS支持
+*[ ] 添加长时间转换支持(监控进程停止就要重启| 一键重启的功能)
 *[ ] 添加hls转换
 *[ ] 添加 接收RTMP推流转发
 *[ ] 尝试优化内存拷贝
