@@ -9,8 +9,6 @@ import com.dc.videojc.model.TaskContext;
  * @date 2021/6/18
  */
 public interface VideoConvertorTask extends Runnable {
-    Object VIDEO_CONVERTOR_TASK_MAP_LOCK = new Object();
-    
     @Override
     void run();
     

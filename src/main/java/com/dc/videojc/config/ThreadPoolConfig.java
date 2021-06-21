@@ -27,8 +27,24 @@ public class ThreadPoolConfig {
         executor.setCorePoolSize(poolCoreSize);
         executor.setMaxPoolSize(poolMaxSize);
         executor.setQueueCapacity(0);
-        executor.setThreadNamePrefix("vediojc-task");
-        executor.setThreadGroupName("vediojc-group");
+        executor.setThreadNamePrefix("vediojc");
+        executor.setThreadGroupName("vediojc-task");
         return executor;
     }
+    
+    @Value("${vediojs.process.monitor.trace-log:false}")
+    private Boolean traceLog;
+    
+    @Bean
+    @Qualifier("processMonitorTaskPool")
+    public ThreadPoolTaskExecutor processMonitorTaskPool() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(traceLog ? poolCoreSize * 2 : poolCoreSize);
+        executor.setMaxPoolSize(traceLog ? poolMaxSize * 2 : poolMaxSize);
+        executor.setQueueCapacity(0);
+        executor.setThreadNamePrefix("vediojc");
+        executor.setThreadGroupName("vediojc-process-m");
+        return executor;
+    }
+    
 }

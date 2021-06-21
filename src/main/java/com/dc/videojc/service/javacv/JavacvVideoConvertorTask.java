@@ -1,6 +1,5 @@
 package com.dc.videojc.service.javacv;
 
-import com.dc.videojc.model.ClientInfo;
 import com.dc.videojc.model.TaskContext;
 import com.dc.videojc.service.AbstractVideoConvertorTask;
 import com.dc.videojc.service.VideoConvertorTask;
@@ -16,7 +15,6 @@ import org.bytedeco.javacv.FrameRecorder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 
 /***
  * descriptions...
@@ -25,10 +23,6 @@ import java.util.Iterator;
  */
 @Slf4j
 public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask implements VideoConvertorTask {
-    /**
-     * flv header
-     */
-    private byte[] header = null;
     /**
      * 输出流，视频最终会输出到此
      */
@@ -57,6 +51,8 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
      */
     long startTime = 0;
     long videoTs;
+    
+    private int restartLateSecond = 2;
     
     public JavacvVideoConvertorTask(TaskContext taskContext) {
         super(taskContext);
@@ -119,14 +115,13 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
     }
     
     protected void processFramesLoop() throws FrameGrabber.Exception, FrameRecorder.Exception {
-        long currentTimestamp = System.currentTimeMillis();
         boolean isNotNull;
         if (notTransformFlag) {
             //转复用
-            isNotNull = processTransfer(currentTimestamp);
+            isNotNull = processTransfer();
         } else {
             //转码
-            isNotNull = processTransform(currentTimestamp);
+            isNotNull = processTransform();
         }
         if (!isNotNull) {
             isRunning = false;
@@ -139,17 +134,35 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         }
     }
     
-    protected boolean processTransform(long currentTimestamp) throws FrameGrabber.Exception, FrameRecorder.Exception {
+    private void processIfLate(long currentTimestamp) throws FrameGrabber.Exception {
+        /*
+         * 以下代码不靠谱
+         * 转码模式下 每秒25帧 根据这个计算应该处理帧数(时间差*(25/1000)))-当前处理帧数(frame.index) > restartLateSecond*25 时重启
+         * 转复用模式下 应该在 AVPacket 里面找寻api
+         * 另注: 在转码延迟的情况下 应该想办法降低服务负载,单纯的重启服务只会造成更大性能损耗
+         */
+//        if (startTime == 0) {
+//            startTime = currentTimestamp;
+//        }
+//        videoTs = currentTimestamp - startTime;
+//        // 判断时间偏移
+//        if (videoTs - recorder.getTimestamp() > restartLateSecond) {
+//            //TODO 处理速度比较慢,时间大于视频播放条,就需要重启,或者重新刷新
+//            if (notTransformFlag) {
+//                //转封装模式，延迟很小不需要重启，只需要清空缓存即可
+//                grabber.flush();
+//            } else {
+//                //转码模式
+//                log.warn("转换任务-转码延迟过大-重启收集器[{}][{}]", this.getTaskContext(), this);
+//                grabber.restart();
+//                startTime=0;
+//            }
+//        }
+    }
+    
+    protected boolean processTransform() throws FrameGrabber.Exception, FrameRecorder.Exception {
         Frame frame = grabber.grabFrame();
         if (frame != null) {
-            if (startTime == 0) {
-                startTime = currentTimestamp;
-            }
-            videoTs = 1000 * (currentTimestamp - startTime);
-            // 判断时间偏移
-            if (videoTs > recorder.getTimestamp()) {
-                recorder.setTimestamp((videoTs));
-            }
             recorder.record(frame);
             log.trace("转换任务-转码帧[{}][{}][{}]", this.getTaskContext(), this, videoTs);
             return true;
@@ -158,46 +171,15 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         }
     }
     
-    protected boolean processTransfer(long currentTimestamp) throws FrameGrabber.Exception, FrameRecorder.Exception {
+    protected boolean processTransfer() throws FrameGrabber.Exception, FrameRecorder.Exception {
         AVPacket pkt = grabber.grabPacket();
         if (null != pkt && !pkt.isNull()) {
-            if (startTime == 0) {
-                startTime = currentTimestamp;
-            }
-            videoTs = 1000 * (currentTimestamp - startTime);
-            // 判断时间偏移
-            if (videoTs > recorder.getTimestamp()) {
-                recorder.setTimestamp((videoTs));
-            }
             recorder.recordPacket(pkt);
             log.trace("转换任务-转复用[{}][{}][{}]", this.getTaskContext(), this, videoTs);
             return true;
         } else {
             return false;
         }
-    }
-    
-    private void sendFrameData(byte[] data) {
-        for (Iterator<ClientInfo> iterator = taskContext.getClientList().iterator(); iterator.hasNext(); ) {
-            ClientInfo client = iterator.next();
-            try {
-                if (!client.isHeaderSent()) {
-                    client.getDataSender().send(header);
-                    client.setHeaderSent(true);
-                }
-                client.getDataSender().send(data);
-            } catch (Exception e) {
-                iterator.remove();
-                log.warn("转换任务-发送客户端数据失败,应该是客户端已经关闭[{}][{}],clientInfo:[{}]", this.getTaskContext(), this, client);
-                log.warn("", e);
-            }
-        }
-        if (taskContext.getClientList().isEmpty() && taskContext.getLastNoClientTime() == null) {
-            taskContext.setLastNoClientTime(System.currentTimeMillis());
-        } else if (!taskContext.getClientList().isEmpty()) {
-            taskContext.setLastNoClientTime(null);
-        }
-    
     }
     
     @Override
@@ -309,17 +291,8 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         }
     }
     
-    @Override
-    public void addClient(ClientInfo clientInfo) {
-        try {
-            if (!clientInfo.isHeaderSent()) {
-                clientInfo.getDataSender().send(header);
-                clientInfo.setHeaderSent(true);
-            }
-            super.addClient(clientInfo);
-            log.info("转换任务-添加客户端成功[{}][{}][{}]", this.getTaskContext(), this, clientInfo);
-        } catch (Exception e) {
-            throw new IllegalStateException("发送视频流头部信息失败", e);
-        }
+    public JavacvVideoConvertorTask setRestartLateSecond(int restartLateSecond) {
+        this.restartLateSecond = restartLateSecond;
+        return this;
     }
 }
