@@ -1,0 +1,17 @@
+
+### add stable
+POST http://localhost:8080/livem
+Content-Type: application/json
+
+{
+  "source": "rtsp://2.35.252.200/stream0"
+}
+
+### get list
+GET http://localhost:8080/livem
+
+### delete stable
+DELETE http://localhost:8080/livem/9ac86af9be2fc782ba356b7b5b56ccac
+
+### restart
+POST http://localhost:8080/livem/9ac86af9be2fc782ba356b7b5b56ccac/restart

@@ -121,6 +121,7 @@ public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask impleme
             } else {
                 throw new IllegalStateException("header 大于1k???");
             }
+            running = true;
         } catch (Exception e) {
             process.destroy();
             running = false;

@@ -52,8 +52,6 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
     long startTime = 0;
     long videoTs;
     
-    private int restartLateSecond = 2;
-    
     public JavacvVideoConvertorTask(TaskContext taskContext) {
         super(taskContext);
     }
@@ -72,6 +70,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
             header = bos.toByteArray();
             bos.reset();
         }
+        isRunning = true;
     }
     
     @Override
@@ -291,8 +290,4 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
         }
     }
     
-    public JavacvVideoConvertorTask setRestartLateSecond(int restartLateSecond) {
-        this.restartLateSecond = restartLateSecond;
-        return this;
-    }
 }
