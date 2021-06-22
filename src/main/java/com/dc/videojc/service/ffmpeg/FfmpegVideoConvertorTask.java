@@ -3,12 +3,14 @@ package com.dc.videojc.service.ffmpeg;
 import cn.hutool.core.collection.CollUtil;
 import com.dc.videojc.model.TaskContext;
 import com.dc.videojc.service.AbstractVideoConvertorTask;
-import com.dc.videojc.service.StandardProcessMonitor;
 import com.dc.videojc.service.VideoConvertorTask;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,12 +26,13 @@ import java.util.List;
 public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask implements VideoConvertorTask {
     private final String ffmpegPath;
     private boolean running = true;
-    private final StandardProcessMonitor standardProcessMonitor;
+    private final ThreadPoolTaskExecutor processMonitorTaskPool;
+    private boolean traceLog = false;
     
-    public FfmpegVideoConvertorTask(TaskContext taskContext, String ffmpegPath, StandardProcessMonitor standardProcessMonitor) {
+    public FfmpegVideoConvertorTask(TaskContext taskContext, String ffmpegPath, ThreadPoolTaskExecutor processMonitorTaskPool) {
         super(taskContext);
         this.ffmpegPath = ffmpegPath;
-        this.standardProcessMonitor = standardProcessMonitor;
+        this.processMonitorTaskPool = processMonitorTaskPool;
     }
     
     private ServerSocket tcpServer = null;
@@ -106,7 +109,7 @@ public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask impleme
             throw new IllegalStateException("转换任务-初始化失败,转换进程启动失败", e);
         }
         try {
-            standardProcessMonitor.monitor(process, this.getTaskContext() + "" + this);
+            monitorOutput();
             client = tcpServer.accept();
             inputStream = client.getInputStream();
             header = new byte[1024];
@@ -124,6 +127,27 @@ public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask impleme
             throw new IllegalStateException("转换任务-初始化失败,视频网络桥接初始化失败", e);
         }
         log.info("转换任务-启动成功[{}][{}]", this.getTaskContext(), this);
+    }
+    
+    private void monitorOutput() {
+        processMonitorTaskPool.execute(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                String line;
+                while (null != (line = reader.readLine())) {
+                    if (!traceLog) {
+                        log.error("[{}{}]:{}", this.getTaskContext(), this, line);
+                    } else {
+                        if (line.contains("fail") | line.contains("err")) {
+                            log.error("[{}{}]:{}", this.getTaskContext(), this, line);
+                        } else {
+                            log.trace("[{}{}]:{}", this.getTaskContext(), this, line);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Monitor Process failed[" + this.getTaskContext() + "][" + this + "]", e);
+            }
+        });
     }
     
     @Override
@@ -159,7 +183,16 @@ public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask impleme
         cmd.add("-c:a");
         cmd.add("aac");
         cmd.add("-f");
+        if (!traceLog) {
+            cmd.add("-loglevel");
+            cmd.add("error");
+        }
         cmd.add(taskContext.getVideoInfo().getTargetFormat());
         cmd.add(outputUrl);
+    }
+    
+    public FfmpegVideoConvertorTask setTraceLog(boolean traceLog) {
+        this.traceLog = traceLog;
+        return this;
     }
 }

@@ -2,13 +2,14 @@ package com.dc.videojc.service.ffmpeg;
 
 import com.dc.videojc.model.ConvertContext;
 import com.dc.videojc.model.TaskContext;
-import com.dc.videojc.service.StandardProcessMonitor;
 import com.dc.videojc.service.VideoConvertor;
 import com.dc.videojc.service.VideoConvertorTask;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.javacpp.Loader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -27,9 +28,11 @@ public class FfmpegVideoConvertor implements VideoConvertor {
     private Set<String> supportProtocols;
     @Value("${vediojc.javacv.target-formats.support:flv}")
     private Set<String> supportTargetFormats;
-    
+    @Value("${vediojs.process.monitor.trace-log:false}")
+    private boolean traceLog;
     @Autowired
-    private StandardProcessMonitor standardProcessMonitor;
+    @Qualifier("processMonitorTaskPool")
+    private ThreadPoolTaskExecutor processMonitorTaskPool;
     
     private String ffmpegPath;
     
@@ -60,7 +63,8 @@ public class FfmpegVideoConvertor implements VideoConvertor {
         taskContext.setNotAutoClose(Boolean.FALSE.equals(convertContext.getAutoClose()));
         taskContext.setVideoInfo(convertContext.getVideoInfo());
         taskContext.setSourceProtocol(convertContext.getSourceProtocol());
-        ffmpegVideoConvertorTask = new FfmpegVideoConvertorTask(taskContext, ffmpegPath, standardProcessMonitor);
+        ffmpegVideoConvertorTask = new FfmpegVideoConvertorTask(taskContext, ffmpegPath, processMonitorTaskPool);
+        ffmpegVideoConvertorTask.setTraceLog(traceLog);
         return ffmpegVideoConvertorTask;
     }
 }

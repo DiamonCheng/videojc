@@ -4,9 +4,8 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /***
  * descriptions...
@@ -19,7 +18,7 @@ public class TaskContext {
     private VideoInfo videoInfo;
     private boolean notAutoClose;
     @Setter(AccessLevel.PRIVATE)
-    private List<ClientInfo> clientList = Collections.synchronizedList(new ArrayList<>());
+    private Collection<ClientInfo> clientList = new ConcurrentLinkedQueue<>();
     private Long lastNoClientTime;
     private String sourceProtocol;
     

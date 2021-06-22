@@ -1,5 +1,6 @@
 package com.dc.videojc.service;
 
+import cn.hutool.core.io.unit.DataSizeUtil;
 import com.dc.videojc.model.ClientInfo;
 import com.dc.videojc.model.TaskContext;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ public abstract class AbstractVideoConvertorTask implements VideoConvertorTask {
      * flv header
      */
     protected byte[] header;
-    
+    protected long logIntervalMs = 2000;
     public AbstractVideoConvertorTask(TaskContext taskContext) {
         this.taskContext = taskContext;
     }
@@ -60,7 +61,18 @@ public abstract class AbstractVideoConvertorTask implements VideoConvertorTask {
         }
     }
     
+    private long lastLogTime = 0;
+    private long sendData = 0;
+    
+    /**
+     * 这里可能有性能问题,具体表现为 如果网络有问题,这一步可能会阻塞-- 待测试
+     *
+     * @param data 要发送的数据
+     */
     protected void sendFrameData(byte[] data) {
+        if (lastLogTime == 0) {
+            lastLogTime = System.currentTimeMillis();
+        }
         for (Iterator<ClientInfo> iterator = taskContext.getClientList().iterator(); iterator.hasNext(); ) {
             ClientInfo client = iterator.next();
             try {
@@ -75,10 +87,25 @@ public abstract class AbstractVideoConvertorTask implements VideoConvertorTask {
                 log.warn("", e);
             }
         }
+        if (!taskContext.getClientList().isEmpty()) {
+            long current = System.currentTimeMillis();
+            if (current - lastLogTime > logIntervalMs) {
+                log.debug("转换任务-{}毫秒内发送了{}个客户端的{}数据[{}][{}]", logIntervalMs, taskContext.getClientList().size(), DataSizeUtil.format(sendData), this.getTaskContext(), this);
+                sendData = 0;
+                lastLogTime = current;
+            } else {
+                sendData += data.length;
+            }
+        }
         if (taskContext.getClientList().isEmpty() && taskContext.getLastNoClientTime() == null) {
             taskContext.setLastNoClientTime(System.currentTimeMillis());
         } else if (!taskContext.getClientList().isEmpty()) {
             taskContext.setLastNoClientTime(null);
         }
+    }
+    
+    public AbstractVideoConvertorTask setLogIntervalMs(long logIntervalMs) {
+        this.logIntervalMs = logIntervalMs;
+        return this;
     }
 }
