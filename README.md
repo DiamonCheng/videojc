@@ -14,7 +14,7 @@ Flash 禁用之后, 网页端对于RTMP与RTSP协议的播放解决方案
 3. -[rtsp]->FFMPEG-[rtmp]->NGINX(flv-module)-[http-flv]->BROWSER(flv.js)
 4. -[rtsp]->SRS(ffmpeg)-[http-flv]->BROWSER(flv.js)
 
-### 现在问题是,以上方案对于 Windows 十分不友好,对于 Java 也十分不友好, 所以有了这个
+### 现在问题是,以上方案不能动态添加转换链接, 对于 Windows 十分不友好, 对于 Java 也十分不友好, 所以有了这个
 
 #### 以下是videojc方案
 
