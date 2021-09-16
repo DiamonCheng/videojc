@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.dc</groupId>
     <artifactId>videojc</artifactId>
-    <version>1.0</version>
+    <version>2.0</version>
     <name>videojc</name>
     <description>视频流组件转换服务</description>
     <properties>
