@@ -28,10 +28,11 @@ Flash 禁用之后, 网页端对于RTMP与RTSP协议的播放解决方案
 2. 集成ffmpeg与javacv
 3. 可以做成服务端,也可以作为客户端
 4. 可以动态添加视频流转换,可以在一个TCP连接(WS/HTTP)之中直接做到添加拉流转换+写流
-
+5. 直接可以RTMP推流转换成FLV, 相当于一个直播服务器!
 ## References
 
 * https://gitee.com/52jian/EasyMedia.git (抄了别人的代码,重构了一下,增加健壮性)
+* https://github.com/Red5/
 
 ## Usage
 
@@ -39,6 +40,14 @@ Flash 禁用之后, 网页端对于RTMP与RTSP协议的播放解决方案
 * http://localhost:8080/live?source=rtsp://2.35.252.200/stream0
 * http://localhost:8080/live?source=rtmp://2.35.253.47:1925/live/livestream
 * ws://localhost:8080/live?source=rtmp://2.35.253.47:1925/live/livestream&ffmpeg=true
+
+* http://localhost:8080/live/{taskId}
+
+### 播放器选择
+
+可以在使用vlc,potplayer,或者输入网址 http://bilibili.github.io/flv.js/demo/
+
+## 一些管理功能
 
 ```
 ### add stable
@@ -59,6 +68,17 @@ DELETE http://localhost:8080/livem/9ac86af9be2fc782ba356b7b5b56ccac
 POST http://localhost:8080/livem/9ac86af9be2fc782ba356b7b5b56ccac/restart
 ```
 
+## RTMP直播服务器
+
+在 application.properties 中设置 videojc.rtmp-red5.enabled=true  
+启用之后,启动服务器之后会监听1935 端口, 默认开放了一个开放的rtmp推流地址 rtmp://localhost:1935/live/{scope}  
+推流之后,可以使用播放器播放
+
+1. rtmp://localhost:1935/live/{scope} (FLV in RTMP)
+2. http://localhost:8080/live/{scope} (FLV)
+
+并且 http://localhost:8080/livem 接口中能够看到正在推流的地址列表
+
 ## TODO
 
 *[x] test...
@@ -66,6 +86,6 @@ POST http://localhost:8080/livem/9ac86af9be2fc782ba356b7b5b56ccac/restart
 *[x] 添加WS支持
 *[x] 添加长时间转换支持(监控进程停止就要重启| 一键重启的功能)
 *[ ] 添加hls转换
-*[ ] 添加 接收RTMP推流转发
+*[x] 添加 接收RTMP推流转发
 *[ ] 尝试优化内存拷贝-- 看起来不需要优化
 *[ ] 录制功能?

@@ -14,7 +14,13 @@
     <name>videojc</name>
     <description>视频流组件转换服务</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>1.11</java.version>
+        <red5-server.version>1.2.8</red5-server.version>
+        <red5-io.version>1.2.8</red5-io.version>
+        <red5-service.version>1.2.8</red5-service.version>
+        <red5-server-common.version>1.2.8</red5-server-common.version>
+        <mina.version>2.0.21</mina.version>
+        <ehcache.version>2.10.6</ehcache.version>
     </properties>
     <dependencies>
         <dependency>
@@ -36,22 +42,69 @@
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv</artifactId>
-            <version>1.5.4</version>
+            <version>1.5.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>ffmpeg-platform</artifactId>
-            <version>4.3.1-1.5.4</version>
+            <version>4.3.2-1.5.5</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>5.7.2</version>
+            <version>5.7.11</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-server</artifactId>
+            <version>${red5-server.version}</version>
+            <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <artifactId>*</artifactId>
+                    <groupId>*</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-io</artifactId>
+            <version>${red5-io.version}</version>
+            <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <artifactId>*</artifactId>
+                    <groupId>*</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-server-common</artifactId>
+            <version>${red5-server-common.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.red5</groupId>
+            <artifactId>red5-service</artifactId>
+            <version>${red5-service.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+            <version>2.0.21</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>${ehcache.version}</version>
         </dependency>
     </dependencies>
 

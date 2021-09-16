@@ -5,6 +5,7 @@ import com.dc.videojc.config.SpringContextUtil;
 import com.dc.videojc.model.ClientInfo;
 import com.dc.videojc.model.ConvertContext;
 import com.dc.videojc.model.SVideoInfo;
+import com.dc.videojc.model.TaskContext;
 import com.dc.videojc.model.TaskInfoVO;
 import com.dc.videojc.model.VideoInfo;
 import com.dc.videojc.repository.StableVideoTaskRepository;
@@ -145,6 +146,8 @@ public class ConvertServiceImpl implements ConvertService {
         VideoConvertorTask convertTask = videoConvertorTaskMap.get(taskId);
         if (convertTask == null) {
             throw new IllegalStateException("指定资源不存在 " + taskId);
+        } else if (!convertTask.getTaskContext().isCloseable()) {
+            throw new IllegalStateException("指定资源不能被删除 " + taskId);
         } else {
             convertTask.getTaskContext().setNotAutoClose(false);
         }
@@ -234,6 +237,18 @@ public class ConvertServiceImpl implements ConvertService {
         if (clientInfo != null) {
             convertTask.addClient(clientInfo);
         }
+    }
+    
+    @Override
+    public void registerUnCloseableTask(VideoConvertorTask videoConvertorTask) {
+        final TaskContext taskContext = videoConvertorTask.getTaskContext();
+        videoConvertorTask.setOnAbort(() -> {
+            videoConvertorTaskMap.remove(taskContext.getId());
+            log.info("转换任务-(可能是异常)结束![{}][{}]", taskContext, videoConvertorTask);
+        });
+        videoConvertorTaskMap.put(taskContext.getId(), videoConvertorTask);
+        videoConvertorTask.init();
+        threadPoolTaskExecutor.execute(videoConvertorTask);
     }
     
     private ConvertContext buildContext(ClientInfo clientInfo, VideoInfo videoInfo) {

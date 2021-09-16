@@ -24,4 +24,6 @@ public interface ConvertService {
     void restartTask(String taskId);
     
     void doConvert(ClientInfo clientInfo, VideoInfo videoInfo);
+    
+    void registerUnCloseableTask(VideoConvertorTask videoConvertorTask);
 }

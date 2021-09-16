@@ -28,7 +28,7 @@ public class FfmpegVideoConvertor implements VideoConvertor {
     private Set<String> supportProtocols;
     @Value("${vediojc.javacv.target-formats.support:flv}")
     private Set<String> supportTargetFormats;
-    @Value("${vediojs.process.monitor.trace-log:false}")
+    @Value("${vediojc.process.monitor.trace-log:false}")
     private boolean traceLog;
     @Autowired
     @Qualifier("processMonitorTaskPool")

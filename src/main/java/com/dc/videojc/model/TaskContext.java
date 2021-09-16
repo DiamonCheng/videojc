@@ -21,7 +21,7 @@ public class TaskContext {
     private Collection<ClientInfo> clientList = new ConcurrentLinkedQueue<>();
     private Long lastNoClientTime;
     private String sourceProtocol;
-    
+    private boolean closeable = true;
     /**
      * toString
      */

@@ -32,7 +32,7 @@ public class ThreadPoolConfig {
         return executor;
     }
     
-    @Value("${vediojs.process.monitor.trace-log:false}")
+    @Value("${vediojc.process.monitor.trace-log:false}")
     private Boolean traceLog;
     
     @Bean
