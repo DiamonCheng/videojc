@@ -49,6 +49,9 @@ Content-Type: application/json
 "source": "rtsp://2.35.252.200/stream0"
 }
 
+### play by id
+GET http://localhost:8080/live/9ac86af9be2fc782ba356b7b5b56ccac
+
 ### get list
 GET http://localhost:8080/livem
 

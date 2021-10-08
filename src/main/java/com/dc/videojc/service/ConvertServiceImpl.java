@@ -78,7 +78,7 @@ public class ConvertServiceImpl implements ConvertService {
         videoConvertorTaskMap.values().forEach(VideoConvertorTask::shutdown);
     }
     
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRateString = "${vediojc.task.restart.duration:1000}")
     public void monitorTasks() {
         long currentTimestamp = System.currentTimeMillis();
         videoConvertorTaskMap.entrySet().removeIf(e -> {
