@@ -32,6 +32,12 @@ public class StreamController {
     @Autowired
     private ConvertService convertService;
     
+    /**
+     * 直接尝试播放
+     *
+     * @param videoInfo 视频播放信息
+     * @return flv流
+     */
     @GetMapping("live")
     public Object live(VideoInfo videoInfo) {
         final ResponseBodyEmitter responseBodyEmitter = new ResponseBodyEmitter(-1L);
@@ -42,6 +48,18 @@ public class StreamController {
         clientInfo.setClientIp(getIpAddress());
         convertService.doConvert(clientInfo, videoInfo);
         return responseBodyEmitter;
+    }
+    
+    /**
+     * 测试资源是否可用
+     *
+     * @param videoInfo 视频播放信息
+     * @return 成功
+     */
+    @GetMapping("test")
+    public AjaxResult test(VideoInfo videoInfo) {
+        convertService.doConvert(null, videoInfo);
+        return new AjaxResult();
     }
     
     @GetMapping(value = "live/{taskId}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
