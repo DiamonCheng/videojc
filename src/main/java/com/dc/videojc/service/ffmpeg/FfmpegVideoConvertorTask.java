@@ -169,6 +169,10 @@ public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask impleme
             cmd.add("-rtsp_transport");
             cmd.add("tcp");
         }
+        // 尝试开启硬件加速
+        cmd.add("-hwaccel");
+        cmd.add("auto");
+    
         cmd.add("-i");
         cmd.add(taskContext.getVideoInfo().getSource());
         cmd.add("-max_delay");
@@ -178,17 +182,18 @@ public class FfmpegVideoConvertorTask extends AbstractVideoConvertorTask impleme
         cmd.add("-r");
         cmd.add("25");
         cmd.add("-c:v");
-        cmd.add("libx264");
+        cmd.add("h264");
         cmd.add("-preset:v");
         cmd.add("fast");
         cmd.add("-c:a");
         cmd.add("aac");
         cmd.add("-f");
+        cmd.add(taskContext.getVideoInfo().getTargetFormat());
+    
         if (!traceLog) {
             cmd.add("-loglevel");
             cmd.add("error");
         }
-        cmd.add(taskContext.getVideoInfo().getTargetFormat());
         cmd.add(outputUrl);
     }
     
