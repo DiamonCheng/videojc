@@ -15,10 +15,7 @@
     <description>视频流组件转换服务</description>
     <properties>
         <java.version>1.11</java.version>
-        <red5-server.version>1.2.8</red5-server.version>
-        <red5-io.version>1.2.8</red5-io.version>
-        <red5-service.version>1.2.8</red5-service.version>
-        <red5-server-common.version>1.2.8</red5-server-common.version>
+        <red5.version>1.2.8</red5.version>
         <mina.version>2.0.21</mina.version>
         <ehcache.version>2.10.6</ehcache.version>
     </properties>
@@ -42,13 +39,13 @@
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacv</artifactId>
-            <version>1.5.5</version>
+            <version>1.5.7</version>
         </dependency>
 
         <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>ffmpeg-platform</artifactId>
-            <version>4.3.2-1.5.5</version>
+            <version>5.0-1.5.7</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -64,7 +61,7 @@
         <dependency>
             <groupId>org.red5</groupId>
             <artifactId>red5-server</artifactId>
-            <version>${red5-server.version}</version>
+            <version>${red5.version}</version>
             <type>jar</type>
             <exclusions>
                 <exclusion>
@@ -76,7 +73,7 @@
         <dependency>
             <groupId>org.red5</groupId>
             <artifactId>red5-io</artifactId>
-            <version>${red5-io.version}</version>
+            <version>${red5.version}</version>
             <type>jar</type>
             <exclusions>
                 <exclusion>
@@ -88,12 +85,12 @@
         <dependency>
             <groupId>org.red5</groupId>
             <artifactId>red5-server-common</artifactId>
-            <version>${red5-server-common.version}</version>
+            <version>${red5.version}</version>
         </dependency>
         <dependency>
             <groupId>org.red5</groupId>
             <artifactId>red5-service</artifactId>
-            <version>${red5-service.version}</version>
+            <version>${red5.version}</version>
             <type>jar</type>
         </dependency>
         <dependency>

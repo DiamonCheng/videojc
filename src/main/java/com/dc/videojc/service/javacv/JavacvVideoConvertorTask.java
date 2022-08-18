@@ -205,6 +205,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
          */
         // 拉流器
         grabber = new FFmpegFrameGrabber(taskContext.getVideoInfo().getSource());
+        grabber.setOption("hwaccel", "auto");
         grabber.setOption("threads", "1");
         grabber.setOption("buffer_size", "1024000");
         
@@ -254,7 +255,7 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
             recorder.setFrameRate(25);
             // 设置gop,与帧率相同，相当于间隔1秒chan's一个关键帧
             recorder.setGopSize(25);
-            recorder.setVideoCodecName("libx264");
+            recorder.setVideoCodecName("h264");
             recorder.setPixelFormat(avutil.AV_PIX_FMT_YUV420P);
             recorder.setAudioCodecName("aac");
             /*
@@ -278,12 +279,10 @@ public class JavacvVideoConvertorTask extends AbstractVideoConvertorTask impleme
                 log.error("启动转复用录制器失败...尝试启用转码", e);
                 // 如果转复用失败，则自动切换到转码模式
                 notTransformFlag = false;
-                if (recorder != null) {
-                    try {
-                        recorder.stop();
-                    } catch (org.bytedeco.javacv.FrameRecorder.Exception e1) {
-                        log.error("启动转复用录制器失败...尝试启用转码...guanbishibai ", e1);
-                    }
+                try {
+                    recorder.stop();
+                } catch (org.bytedeco.javacv.FrameRecorder.Exception e1) {
+                    log.error("启动转复用录制器失败...尝试启用转码...关闭失败 ", e1);
                 }
                 initRecorder();
             }
