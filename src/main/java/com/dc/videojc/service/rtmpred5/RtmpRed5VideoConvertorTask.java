@@ -87,6 +87,7 @@ public class RtmpRed5VideoConvertorTask extends AbstractVideoConvertorTask imple
                 byteBuffer.get(header);
                 RtmpRed5VideoConvertorTask.this.onHeaderReceived(header);
             }
+            onDataReceived(byteBuffer);
         }
         
         @Override
